@@ -15,7 +15,7 @@ namespace MeetnGreet.Data
 
         public DataRepository(IConfiguration configuration)
         {
-            _connectionString = configuration["ConnectionString:DefaultConnection"];
+            _connectionString = configuration["ConnectionStrings:DefaultConnection"];
         }
         public GuestGetResponse GetGuest(int guestId)
         {
