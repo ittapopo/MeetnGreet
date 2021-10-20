@@ -20,12 +20,12 @@ namespace MeetnGreet.Data
 
         GuestGetResponse GetGuest(int answerId);
 
-        MeetingGetSingleResponse PostMeeting(MeetingPostRequest meeting);
+        MeetingGetSingleResponse PostMeeting(MeetingPostFullRequest meeting);
 
         MeetingGetSingleResponse PutMeeting(int meetingId, MeetingPutRequest meeting);
 
         void DeleteMeeting(int meetingId);
 
-        GuestGetResponse PostGuest(GuestPostRequest guest);
+        GuestGetResponse PostGuest(GuestPostFullRequest guest);
     }
 }

@@ -53,7 +53,14 @@ namespace MeetnGreet.Controllers
         [HttpPost]
         public ActionResult<MeetingGetSingleResponse> PostMeeting(MeetingPostRequest meetingPostRequest)
         {
-            var savedMeeting = _dataRepository.PostMeeting(meetingPostRequest);
+            var savedMeeting = _dataRepository.PostMeeting(new MeetingPostFullRequest
+            {
+                Title = meetingPostRequest.Title,
+                Content = meetingPostRequest.Content,
+                UserId = "1",
+                UserName = "bob.test@test.com",
+                Created = DateTime.UtcNow
+            });
             return CreatedAtAction(nameof(GetMeeting),
                 new { meetingId = savedMeeting.MeetingId },
                 savedMeeting);
@@ -88,12 +95,20 @@ namespace MeetnGreet.Controllers
         [HttpPost("guest")]
         public ActionResult<GuestGetResponse> PostGuest(GuestPostRequest guestPostRequest)
         {
-            var meetingExists = _dataRepository.MeetingExists(guestPostRequest.MeetingId);
+            var meetingExists = _dataRepository.MeetingExists(guestPostRequest.MeetingId.Value);
             if (!meetingExists)
             {
                 return NotFound();
             }
-            var savedGuest = _dataRepository.PostGuest(guestPostRequest);
+            var savedGuest = _dataRepository.PostGuest(new GuestPostFullRequest
+            {
+                MeetingId = guestPostRequest.MeetingId.Value,
+                Content = guestPostRequest.Content,
+                UserId = "1",
+                UserName = "bob.test@test.com",
+                Created = DateTime.UtcNow
+            }
+            );
             return savedGuest;
         }
     }

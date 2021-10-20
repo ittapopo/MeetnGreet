@@ -98,7 +98,7 @@ namespace MeetnGreet.Data
             }
         }
 
-        public MeetingGetSingleResponse PostMeeting(MeetingPostRequest meeting)
+        public MeetingGetSingleResponse PostMeeting(MeetingPostFullRequest meeting)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -142,7 +142,7 @@ namespace MeetnGreet.Data
             }
         }
 
-        public GuestGetResponse PostGuest(GuestPostRequest guest)
+        public GuestGetResponse PostGuest(GuestPostFullRequest guest)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
