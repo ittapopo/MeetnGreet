@@ -18,6 +18,14 @@ namespace MeetnGreet.Data
 
         bool MeetingExists(int meetingId);
 
-        GuestGotResponse GetGuest(int answerId);
+        GuestGetResponse GetGuest(int answerId);
+
+        MeetingGetSingleResponse PostMeeting(MeetingPostRequest meeting);
+
+        MeetingGetSingleResponse PutMeeting(int meetingId, MeetingPutRequest meeting);
+
+        void DeleteMeeting(int meetingId);
+
+        GuestGetResponse PostGuest(GuestPostRequest guest);
     }
 }
