@@ -32,5 +32,69 @@ namespace MeetnGreet.Controllers
                 return _dataRepository.GetMeetingsBySearch(search);
             }
         }
+
+        [HttpGet("unanswered")]
+        public IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings()
+        {
+            return _dataRepository.GetUnansweredMeetings();
+        }
+
+        [HttpGet("{meetingId}")]
+        public ActionResult<MeetingGetSingleResponse> GetMeeting(int meetingId)
+        {
+            var meeting = _dataRepository.GetMeeting(meetingId);
+            if (meeting == null)
+            {
+                return NotFound();
+            }
+            return meeting;
+        }
+
+        [HttpPost]
+        public ActionResult<MeetingGetSingleResponse> PostMeeting(MeetingPostRequest meetingPostRequest)
+        {
+            var savedMeeting = _dataRepository.PostMeeting(meetingPostRequest);
+            return CreatedAtAction(nameof(GetMeeting),
+                new { meetingId = savedMeeting.MeetingId },
+                savedMeeting);
+        }
+
+        [HttpPut("{meetingId}")]
+        public ActionResult<MeetingGetSingleResponse> PutMeeting(int meetingId, MeetingPutRequest meetingPutRequest)
+        {
+            var meeting = _dataRepository.GetMeeting(meetingId);
+            if (meeting == null)
+            {
+                return NotFound();
+            }
+            meetingPutRequest.Title = string.IsNullOrEmpty(meetingPutRequest.Title) ? meeting.Title : meetingPutRequest.Title;
+            meetingPutRequest.Content = string.IsNullOrEmpty(meetingPutRequest.Content) ? meeting.Content : meetingPutRequest.Content;
+            var savedMeeting = _dataRepository.PutMeeting(meetingId, meetingPutRequest);
+            return savedMeeting;
+        }
+
+        [HttpDelete("{meetingId}")]
+        public ActionResult DeleteMeeting(int meetingId)
+        {
+            var meeting = _dataRepository.GetMeeting(meetingId);
+            if (meeting == null)
+            {
+                return NotFound();
+            }
+            _dataRepository.DeleteMeeting(meetingId);
+            return NoContent();
+        }
+
+        [HttpPost("guest")]
+        public ActionResult<GuestGetResponse> PostGuest(GuestPostRequest guestPostRequest)
+        {
+            var meetingExists = _dataRepository.MeetingExists(guestPostRequest.MeetingId);
+            if (!meetingExists)
+            {
+                return NotFound();
+            }
+            var savedGuest = _dataRepository.PostGuest(guestPostRequest);
+            return savedGuest;
+        }
     }
 }
