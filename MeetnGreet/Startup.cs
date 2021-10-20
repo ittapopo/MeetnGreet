@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DbUp;
 using MeetnGreet.Data;
+using MeetnGreet.Hubs;
 
 namespace MeetnGreet
 {
@@ -50,6 +51,7 @@ namespace MeetnGreet
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MeetnGreet", Version = "v1" });
             });
             services.AddScoped<IDataRepository, DataRepository>();
+            services.AddSignalR();
         }
 
         //test
@@ -75,6 +77,7 @@ namespace MeetnGreet
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<MeetingsHub>("/meetingshub");
             });
         }
     }

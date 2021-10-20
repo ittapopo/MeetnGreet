@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using MeetnGreet.Data;
 using MeetnGreet.Data.Models;
+using Microsoft.AspNetCore.SignalR;
+using MeetnGreet.Hubs;
 
 namespace MeetnGreet.Controllers
 {
@@ -14,10 +16,12 @@ namespace MeetnGreet.Controllers
     public class MeetingsController : ControllerBase
     {
         private readonly IDataRepository _dataRepository;
+        private readonly IHubContext<MeetingsHub> _meetingHubContext;
 
-        public MeetingsController(IDataRepository dataRepository)
+        public MeetingsController(IDataRepository dataRepository, IHubContext<MeetingsHub> meetingHubContext)
         {
             _dataRepository = dataRepository;
+            _meetingHubContext = meetingHubContext;
         }
 
         [HttpGet]
@@ -109,6 +113,13 @@ namespace MeetnGreet.Controllers
                 Created = DateTime.UtcNow
             }
             );
+            _meetingHubContext.Clients.Group(
+                $"Meeting-{guestPostRequest.MeetingId.Value}")
+                .SendAsync(
+                    "ReceiveMeeting",
+                    _dataRepository.GetMeeting(
+                        guestPostRequest.MeetingId.Value));
+
             return savedGuest;
         }
     }
