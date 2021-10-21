@@ -17,39 +17,56 @@ namespace MeetnGreet.Controllers
     {
         private readonly IDataRepository _dataRepository;
         private readonly IHubContext<MeetingsHub> _meetingHubContext;
+        private readonly IMeetingCache _cache;
 
-        public MeetingsController(IDataRepository dataRepository, IHubContext<MeetingsHub> meetingHubContext)
+        public MeetingsController(IDataRepository dataRepository, IHubContext<MeetingsHub> meetingHubContext, IMeetingCache meetingCache)
         {
             _dataRepository = dataRepository;
             _meetingHubContext = meetingHubContext;
+            _cache = meetingCache;
         }
 
         [HttpGet]
-        public IEnumerable<MeetingGetManyResponse> GetMeetings(string search)
+        public IEnumerable<MeetingGetManyResponse> GetMeetings(string search, bool includeGuests, int page = 1, int pageSize = 20)
         {
             if (string.IsNullOrEmpty(search))
             {
-                return _dataRepository.GetMeetings();
+                if (includeGuests)
+                {
+                    return _dataRepository.GetMeetingsWithGuests();
+                } else
+                {
+                    return _dataRepository.GetMeetings();
+                }
             }
             else
             {
-                return _dataRepository.GetMeetingsBySearch(search);
+                return _dataRepository.GetMeetingsBySearchWithPaging(
+                    search,
+                    page,
+                    pageSize
+                    );
             }
         }
 
         [HttpGet("unanswered")]
-        public IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings()
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetings()
         {
-            return _dataRepository.GetUnansweredMeetings();
+            return await _dataRepository.GetUnansweredMeetingsAsync();
         }
 
         [HttpGet("{meetingId}")]
         public ActionResult<MeetingGetSingleResponse> GetMeeting(int meetingId)
         {
-            var meeting = _dataRepository.GetMeeting(meetingId);
+            var meeting = _cache.Get(meetingId);
             if (meeting == null)
             {
-                return NotFound();
+                meeting = _dataRepository.GetMeeting(meetingId);
+                if (meeting == null)
+                {
+                    return NotFound();
+                }
+                _cache.Set(meeting);
             }
             return meeting;
         }
@@ -81,6 +98,8 @@ namespace MeetnGreet.Controllers
             meetingPutRequest.Title = string.IsNullOrEmpty(meetingPutRequest.Title) ? meeting.Title : meetingPutRequest.Title;
             meetingPutRequest.Content = string.IsNullOrEmpty(meetingPutRequest.Content) ? meeting.Content : meetingPutRequest.Content;
             var savedMeeting = _dataRepository.PutMeeting(meetingId, meetingPutRequest);
+            _cache.Remove(savedMeeting.MeetingId);
+            
             return savedMeeting;
         }
 
@@ -93,6 +112,8 @@ namespace MeetnGreet.Controllers
                 return NotFound();
             }
             _dataRepository.DeleteMeeting(meetingId);
+            _cache.Remove(meetingId);
+
             return NoContent();
         }
 
@@ -113,6 +134,8 @@ namespace MeetnGreet.Controllers
                 Created = DateTime.UtcNow
             }
             );
+            _cache.Remove(guestPostRequest.MeetingId.Value);
+
             _meetingHubContext.Clients.Group(
                 $"Meeting-{guestPostRequest.MeetingId.Value}")
                 .SendAsync(

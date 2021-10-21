@@ -12,5 +12,6 @@ namespace MeetnGreet.Data.Models
         public string Content { get; set; }
         public string UserName { get; set; }
         public DateTime Created { get; set; }
+        public List<GuestGetResponse> Guests { get; set; }
     }
 }

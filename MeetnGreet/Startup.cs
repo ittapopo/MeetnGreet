@@ -59,9 +59,11 @@ namespace MeetnGreet
                   .WithOrigins("http://localhost:3000")
                   .AllowCredentials()));
             services.AddSignalR();
+
+            services.AddMemoryCache();
+            services.AddSingleton<IMeetingCache, MeetingCache>();
         }
 
-        //test
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {

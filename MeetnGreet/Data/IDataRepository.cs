@@ -10,9 +10,13 @@ namespace MeetnGreet.Data
     {
         IEnumerable<MeetingGetManyResponse> GetMeetings();
 
+        IEnumerable<MeetingGetManyResponse> GetMeetingsWithGuests();
+
         IEnumerable<MeetingGetManyResponse> GetMeetingsBySearch(string search);
+        IEnumerable<MeetingGetManyResponse> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize);
 
         IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings();
+        Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetingsAsync();
 
         MeetingGetSingleResponse GetMeeting(int meetingId);
 

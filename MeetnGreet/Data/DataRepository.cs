@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Dapper;
 using MeetnGreet.Data.Models;
+using static Dapper.SqlMapper;
 
 namespace MeetnGreet.Data
 {
@@ -34,21 +35,24 @@ namespace MeetnGreet.Data
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                var meeting =
-                    connection.QueryFirstOrDefault<MeetingGetSingleResponse>(
-                        @"EXEC dbo.Meeting_GetSingle @MeetingId = @MeetingId",
-                        new { MeetingId = meetingId }
-                        );
-                if (meeting != null)
-                {
-                    meeting.Guests =
-                        connection.Query<GuestGetResponse>(
-                            @"EXEC dbo.Guest_Get_ByMeetingId
+                using (GridReader results =
+                    connection.QueryMultiple(
+                        @"EXEC dbo.Meeting_GetSingle
+                            @MeetingId = @MeetingId;
+                        EXEC dbo.Guest_Get_ByMeetingId
                             @MeetingId = @MeetingId",
-                            new { MeetingId = meetingId }
-                            );
+                        new { MeetingId = meetingId }
+                        )
+                    )
+                {
+                    var meeting =
+                        results.Read<MeetingGetSingleResponse>().FirstOrDefault();
+                    if (meeting != null)
+                    {
+                        meeting.Guests = results.Read<GuestGetResponse>().ToList();
+                    }
+                    return meeting;
                 }
-                return meeting;
             }
         }
 
@@ -60,6 +64,40 @@ namespace MeetnGreet.Data
                 return connection.Query<MeetingGetManyResponse>(
                     @"EXEC dbo.Meeting_GetMany"
                 );
+            }
+        }
+
+        public IEnumerable<MeetingGetManyResponse> GetMeetingsWithGuests()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                var meetingDictionary =
+                    new Dictionary<int, MeetingGetManyResponse>();
+                return connection
+                    .Query<
+                        MeetingGetManyResponse,
+                        GuestGetResponse,
+                        MeetingGetManyResponse>(
+                            "EXEC dbo.Meeting_GetMany_WithGuests",
+                            map: (q, a) =>
+                            {
+                                MeetingGetManyResponse meeting;
+
+                                if (!meetingDictionary.TryGetValue(q.MeetingId, out meeting))
+                                {
+                                    meeting = q;
+                                    meeting.Guests = new List<GuestGetResponse>();
+                                    meetingDictionary.Add(meeting.MeetingId, meeting);
+                                }
+                                meeting.Guests.Add(a);
+                                return meeting;
+                            },
+                            splitOn: "MeetingId"
+                            )
+                        .Distinct()
+                        .ToList();
             }
         }
 
@@ -75,6 +113,26 @@ namespace MeetnGreet.Data
             }
         }
 
+        public IEnumerable<MeetingGetManyResponse> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var parameters = new
+                {
+                    Search = search,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+                return connection.Query<MeetingGetManyResponse>(
+                    @"EXEC dbo.Meeting_GetMany_BySearch_WithPaging
+                        @Search = @Search,
+                        @PageNumber = @PageNumber,
+                        @PageSize = @PageSize", parameters
+                    );
+            }
+        }
+
         public IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings()
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -83,6 +141,17 @@ namespace MeetnGreet.Data
                 return connection.Query<MeetingGetManyResponse>(
                     "EXEC dbo.Meeting_GetUnanswered"
                     );
+            }
+        }
+
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetingsAsync()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                return await
+                    connection.QueryAsync<MeetingGetManyResponse>(
+                        "EXEC dbo.Meeting_GetUnanswered");
             }
         }
 
