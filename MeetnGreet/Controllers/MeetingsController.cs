@@ -8,6 +8,7 @@ using MeetnGreet.Data;
 using MeetnGreet.Data.Models;
 using Microsoft.AspNetCore.SignalR;
 using MeetnGreet.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MeetnGreet.Controllers
 {
@@ -71,6 +72,7 @@ namespace MeetnGreet.Controllers
             return meeting;
         }
 
+        [Authorize]
         [HttpPost]
         public ActionResult<MeetingGetSingleResponse> PostMeeting(MeetingPostRequest meetingPostRequest)
         {
@@ -87,6 +89,7 @@ namespace MeetnGreet.Controllers
                 savedMeeting);
         }
 
+        [Authorize(Policy ="MustBeMeetingAuthor")]
         [HttpPut("{meetingId}")]
         public ActionResult<MeetingGetSingleResponse> PutMeeting(int meetingId, MeetingPutRequest meetingPutRequest)
         {
@@ -103,6 +106,7 @@ namespace MeetnGreet.Controllers
             return savedMeeting;
         }
 
+        [Authorize(Policy = "MustBeMeetingAuthor")]
         [HttpDelete("{meetingId}")]
         public ActionResult DeleteMeeting(int meetingId)
         {
@@ -117,6 +121,7 @@ namespace MeetnGreet.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpPost("guest")]
         public ActionResult<GuestGetResponse> PostGuest(GuestPostRequest guestPostRequest)
         {

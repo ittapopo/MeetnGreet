@@ -14,6 +14,10 @@ using System.Threading.Tasks;
 using DbUp;
 using MeetnGreet.Data;
 using MeetnGreet.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using MeetnGreet.Authorization;
 
 namespace MeetnGreet
 {
@@ -62,6 +66,24 @@ namespace MeetnGreet
 
             services.AddMemoryCache();
             services.AddSingleton<IMeetingCache, MeetingCache>();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.Authority = Configuration["Auth0:Authority"];
+                options.Audience = Configuration["Auth0:Audience"];
+            });
+
+            services.AddHttpClient();
+            services.AddAuthorization(options =>
+                options.AddPolicy("MustBeMeetingAuthor", policy =>
+                  policy.Requirements
+                    .Add(new MustBeMeetingAuthorRequirement())));
+            services.AddScoped<IAuthorizationHandler, MustBeMeetingAuthorHandler>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -81,7 +103,7 @@ namespace MeetnGreet
             
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
