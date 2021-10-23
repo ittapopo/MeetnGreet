@@ -9,6 +9,10 @@ using MeetnGreet.Data.Models;
 using Microsoft.AspNetCore.SignalR;
 using MeetnGreet.Hubs;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace MeetnGreet.Controllers
 {
@@ -19,12 +23,16 @@ namespace MeetnGreet.Controllers
         private readonly IDataRepository _dataRepository;
         private readonly IHubContext<MeetingsHub> _meetingHubContext;
         private readonly IMeetingCache _cache;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly string _auth0UserInfo;
 
-        public MeetingsController(IDataRepository dataRepository, IHubContext<MeetingsHub> meetingHubContext, IMeetingCache meetingCache)
+        public MeetingsController(IDataRepository dataRepository, IHubContext<MeetingsHub> meetingHubContext, IMeetingCache meetingCache, IHttpClientFactory clientFactory, IConfiguration configuration)
         {
             _dataRepository = dataRepository;
             _meetingHubContext = meetingHubContext;
             _cache = meetingCache;
+            _clientFactory = clientFactory;
+            _auth0UserInfo = $"{configuration["Auth0:Authority"]}userinfo";
         }
 
         [HttpGet]
@@ -80,8 +88,8 @@ namespace MeetnGreet.Controllers
             {
                 Title = meetingPostRequest.Title,
                 Content = meetingPostRequest.Content,
-                UserId = "1",
-                UserName = "bob.test@test.com",
+                UserId = User.FindFirst(ClaimTypes.NameIdentifier).Value,
+                UserName = await GetUserName(),
                 Created = DateTime.UtcNow
             });
             return CreatedAtAction(nameof(GetMeeting),
@@ -134,8 +142,8 @@ namespace MeetnGreet.Controllers
             {
                 MeetingId = guestPostRequest.MeetingId.Value,
                 Content = guestPostRequest.Content,
-                UserId = "1",
-                UserName = "bob.test@test.com",
+                UserId = User.FindFirst(ClaimTypes.NameIdentifier).Value,
+                UserName = await GetUserName(),
                 Created = DateTime.UtcNow
             }
             );
@@ -149,6 +157,30 @@ namespace MeetnGreet.Controllers
                         guestPostRequest.MeetingId.Value));
 
             return savedGuest;
+        }
+
+        private async Task<string> GetUserName()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, _auth0UserInfo);
+            request.Headers.Add("Authorization", Request.Headers["Authorization"].First());
+
+            var client = _clientFactory.CreateClient();
+
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var user = JsonSerializer.Deserialize<User>(jsonContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                return user.Name;
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 }
