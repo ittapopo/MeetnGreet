@@ -18,25 +18,25 @@ namespace MeetnGreet.Data
         {
             _connectionString = configuration["ConnectionStrings:DefaultConnection"];
         }
-        public GuestGetResponse GetGuest(int guestId)
+        public async Task<GuestGetResponse> GetGuest(int guestId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.QueryFirstOrDefault<GuestGetResponse>(
+                await connection.OpenAsync();
+                return await connection.QueryFirstOrDefaultAsync<GuestGetResponse>(
                     @"EXEC dbo.Guest_Get_ByGuestId @GuestId = @GuestId",
                     new { GuestId = guestId }
                     );
             }
         }
 
-        public MeetingGetSingleResponse GetMeeting(int meetingId)
+        public async Task<MeetingGetSingleResponse> GetMeeting(int meetingId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (GridReader results =
-                    connection.QueryMultiple(
+                    await connection.QueryMultipleAsync(
                         @"EXEC dbo.Meeting_GetSingle
                             @MeetingId = @MeetingId;
                         EXEC dbo.Guest_Get_ByMeetingId
@@ -46,37 +46,37 @@ namespace MeetnGreet.Data
                     )
                 {
                     var meeting =
-                        results.Read<MeetingGetSingleResponse>().FirstOrDefault();
+                        (await results.ReadAsync<MeetingGetSingleResponse>()).FirstOrDefault();
                     if (meeting != null)
                     {
-                        meeting.Guests = results.Read<GuestGetResponse>().ToList();
+                        meeting.Guests = (await results.ReadAsync<GuestGetResponse>()).ToList();
                     }
                     return meeting;
                 }
             }
         }
 
-        public IEnumerable<MeetingGetManyResponse> GetMeetings()
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetMeetings()
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.Query<MeetingGetManyResponse>(
+                await connection.OpenAsync();
+                return await connection.QueryAsync<MeetingGetManyResponse>(
                     @"EXEC dbo.Meeting_GetMany"
                 );
             }
         }
 
-        public IEnumerable<MeetingGetManyResponse> GetMeetingsWithGuests()
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsWithGuests()
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
 
                 var meetingDictionary =
                     new Dictionary<int, MeetingGetManyResponse>();
-                return connection
-                    .Query<
+                return (await connection
+                    .QueryAsync<
                         MeetingGetManyResponse,
                         GuestGetResponse,
                         MeetingGetManyResponse>(
@@ -95,36 +95,36 @@ namespace MeetnGreet.Data
                                 return meeting;
                             },
                             splitOn: "MeetingId"
-                            )
+                            ))
                         .Distinct()
                         .ToList();
             }
         }
 
-        public IEnumerable<MeetingGetManyResponse> GetMeetingsBySearch(string search)
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsBySearch(string search)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.Query<MeetingGetManyResponse>(
+                await connection.OpenAsync();
+                return await connection.QueryAsync<MeetingGetManyResponse>(
                     @"Exec dbo.Meeting_GetMany_BySearch @Search = @Search",
                     new { Search = search }
                     );
             }
         }
 
-        public IEnumerable<MeetingGetManyResponse> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize)
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 var parameters = new
                 {
                     Search = search,
                     PageNumber = pageNumber,
                     PageSize = pageSize
                 };
-                return connection.Query<MeetingGetManyResponse>(
+                return await connection.QueryAsync<MeetingGetManyResponse>(
                     @"EXEC dbo.Meeting_GetMany_BySearch_WithPaging
                         @Search = @Search,
                         @PageNumber = @PageNumber,
@@ -133,12 +133,12 @@ namespace MeetnGreet.Data
             }
         }
 
-        public IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings()
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetings()
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.Query<MeetingGetManyResponse>(
+                await connection.OpenAsync();
+                return await connection.QueryAsync<MeetingGetManyResponse>(
                     "EXEC dbo.Meeting_GetUnanswered"
                     );
             }
@@ -155,24 +155,24 @@ namespace MeetnGreet.Data
             }
         }
 
-        public bool MeetingExists(int meetingId)
+        public async Task<bool> MeetingExists(int meetingId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.QueryFirst<bool>(
+                await connection.OpenAsync();
+                return await connection.QueryFirstAsync<bool>(
                     @"EXEC dbo.Meeting_Exists @MeetingId = @MeetingId",
                     new { MeetingId = meetingId }
                     );
             }
         }
 
-        public MeetingGetSingleResponse PostMeeting(MeetingPostFullRequest meeting)
+        public async Task<MeetingGetSingleResponse> PostMeeting(MeetingPostFullRequest meeting)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                var meetingId = connection.QueryFirst<int>(
+                await connection.OpenAsync();
+                var meetingId = await connection.QueryFirstAsync<int>(
                     @"EXEC dbo.Meeting_Post
                       @Title = @Title, @Content = @Content,
                       @UserId = @UserId, @UserName = @UserName,
@@ -180,30 +180,30 @@ namespace MeetnGreet.Data
                     meeting
                     );
 
-                return GetMeeting(meetingId);
+                return await GetMeeting(meetingId);
             }
         }
 
-        public MeetingGetSingleResponse PutMeeting(int meetingId, MeetingPutRequest meeting)
+        public async Task<MeetingGetSingleResponse> PutMeeting(int meetingId, MeetingPutRequest meeting)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                connection.Execute(
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(
                     @"EXEC dbo.Meeting_Put
                       @MeetingId = @MeetingId, @Title = @Title, @Content = @Content",
                     new { MeetingId = meetingId, meeting.Title, meeting.Content }
                     );
-                return GetMeeting(meetingId);
+                return await GetMeeting(meetingId);
             }
         }
 
-        public void DeleteMeeting(int meetingId)
+        public async Task DeleteMeeting(int meetingId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                connection.Execute(
+                await connection.OpenAsync();
+                await connection.ExecuteAsync(
                     @"EXEC dbo.Meeting_Delete
                       @MeetingId = @MeetingId",
                     new { MeetingId = meetingId }
@@ -211,12 +211,12 @@ namespace MeetnGreet.Data
             }
         }
 
-        public GuestGetResponse PostGuest(GuestPostFullRequest guest)
+        public async Task<GuestGetResponse> PostGuest(GuestPostFullRequest guest)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                connection.Open();
-                return connection.QueryFirst<GuestGetResponse>(
+                await connection.OpenAsync();
+                return await connection.QueryFirstAsync<GuestGetResponse>(
                     @"EXEC dbo.Guest_Post
                       @MeetingId = @MeetingId, @Content = @Content,
                       @UserId = @UserId, @UserName = @UserName,

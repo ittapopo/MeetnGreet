@@ -8,28 +8,28 @@ namespace MeetnGreet.Data
 {
     public interface IDataRepository
     {
-        IEnumerable<MeetingGetManyResponse> GetMeetings();
+        Task<IEnumerable<MeetingGetManyResponse>> GetMeetings();
 
-        IEnumerable<MeetingGetManyResponse> GetMeetingsWithGuests();
+        Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsWithGuests();
 
-        IEnumerable<MeetingGetManyResponse> GetMeetingsBySearch(string search);
-        IEnumerable<MeetingGetManyResponse> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize);
+        Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsBySearch(string search);
+        Task<IEnumerable<MeetingGetManyResponse>> GetMeetingsBySearchWithPaging(string search, int pageNumber, int pageSize);
 
-        IEnumerable<MeetingGetManyResponse> GetUnansweredMeetings();
+        Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetings();
         Task<IEnumerable<MeetingGetManyResponse>> GetUnansweredMeetingsAsync();
 
-        MeetingGetSingleResponse GetMeeting(int meetingId);
+        Task<MeetingGetSingleResponse> GetMeeting(int meetingId);
 
-        bool MeetingExists(int meetingId);
+        Task<bool> MeetingExists(int meetingId);
 
-        GuestGetResponse GetGuest(int answerId);
+        Task<GuestGetResponse> GetGuest(int answerId);
 
-        MeetingGetSingleResponse PostMeeting(MeetingPostFullRequest meeting);
+        Task<MeetingGetSingleResponse> PostMeeting(MeetingPostFullRequest meeting);
 
-        MeetingGetSingleResponse PutMeeting(int meetingId, MeetingPutRequest meeting);
+        Task<MeetingGetSingleResponse> PutMeeting(int meetingId, MeetingPutRequest meeting);
 
-        void DeleteMeeting(int meetingId);
+        Task DeleteMeeting(int meetingId);
 
-        GuestGetResponse PostGuest(GuestPostFullRequest guest);
+        Task<GuestGetResponse> PostGuest(GuestPostFullRequest guest);
     }
 }

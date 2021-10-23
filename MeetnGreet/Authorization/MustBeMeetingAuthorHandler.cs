@@ -31,7 +31,7 @@ namespace MeetnGreet.Authorization
 
             var userId = context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
 
-            var meeting = await _dataRepository.GetMeeting(meetingIdAsInt);
+            var meeting =  await _dataRepository.GetMeeting(meetingIdAsInt);
             if (meeting == null)
             {
                 //let it through so the controller can return a 404

@@ -28,21 +28,21 @@ namespace MeetnGreet.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<MeetingGetManyResponse> GetMeetings(string search, bool includeGuests, int page = 1, int pageSize = 20)
+        public async Task<IEnumerable<MeetingGetManyResponse>> GetMeetings(string search, bool includeGuests, int page = 1, int pageSize = 20)
         {
             if (string.IsNullOrEmpty(search))
             {
                 if (includeGuests)
                 {
-                    return _dataRepository.GetMeetingsWithGuests();
+                    return await _dataRepository.GetMeetingsWithGuests();
                 } else
                 {
-                    return _dataRepository.GetMeetings();
+                    return await _dataRepository.GetMeetings();
                 }
             }
             else
             {
-                return _dataRepository.GetMeetingsBySearchWithPaging(
+                return await _dataRepository.GetMeetingsBySearchWithPaging(
                     search,
                     page,
                     pageSize
@@ -57,12 +57,12 @@ namespace MeetnGreet.Controllers
         }
 
         [HttpGet("{meetingId}")]
-        public ActionResult<MeetingGetSingleResponse> GetMeeting(int meetingId)
+        public async Task<ActionResult<MeetingGetSingleResponse>> GetMeeting(int meetingId)
         {
             var meeting = _cache.Get(meetingId);
             if (meeting == null)
             {
-                meeting = _dataRepository.GetMeeting(meetingId);
+                meeting = await _dataRepository.GetMeeting(meetingId);
                 if (meeting == null)
                 {
                     return NotFound();
@@ -74,9 +74,9 @@ namespace MeetnGreet.Controllers
 
         [Authorize]
         [HttpPost]
-        public ActionResult<MeetingGetSingleResponse> PostMeeting(MeetingPostRequest meetingPostRequest)
+        public async Task<ActionResult<MeetingGetSingleResponse>> PostMeeting(MeetingPostRequest meetingPostRequest)
         {
-            var savedMeeting = _dataRepository.PostMeeting(new MeetingPostFullRequest
+            var savedMeeting = await _dataRepository.PostMeeting(new MeetingPostFullRequest
             {
                 Title = meetingPostRequest.Title,
                 Content = meetingPostRequest.Content,
@@ -91,16 +91,16 @@ namespace MeetnGreet.Controllers
 
         [Authorize(Policy ="MustBeMeetingAuthor")]
         [HttpPut("{meetingId}")]
-        public ActionResult<MeetingGetSingleResponse> PutMeeting(int meetingId, MeetingPutRequest meetingPutRequest)
+        public async Task<ActionResult<MeetingGetSingleResponse>> PutMeeting(int meetingId, MeetingPutRequest meetingPutRequest)
         {
-            var meeting = _dataRepository.GetMeeting(meetingId);
+            var meeting = await _dataRepository.GetMeeting(meetingId);
             if (meeting == null)
             {
                 return NotFound();
             }
             meetingPutRequest.Title = string.IsNullOrEmpty(meetingPutRequest.Title) ? meeting.Title : meetingPutRequest.Title;
             meetingPutRequest.Content = string.IsNullOrEmpty(meetingPutRequest.Content) ? meeting.Content : meetingPutRequest.Content;
-            var savedMeeting = _dataRepository.PutMeeting(meetingId, meetingPutRequest);
+            var savedMeeting = await _dataRepository.PutMeeting(meetingId, meetingPutRequest);
             _cache.Remove(savedMeeting.MeetingId);
             
             return savedMeeting;
@@ -108,14 +108,14 @@ namespace MeetnGreet.Controllers
 
         [Authorize(Policy = "MustBeMeetingAuthor")]
         [HttpDelete("{meetingId}")]
-        public ActionResult DeleteMeeting(int meetingId)
+        public async Task<ActionResult> DeleteMeeting(int meetingId)
         {
-            var meeting = _dataRepository.GetMeeting(meetingId);
+            var meeting = await _dataRepository.GetMeeting(meetingId);
             if (meeting == null)
             {
                 return NotFound();
             }
-            _dataRepository.DeleteMeeting(meetingId);
+            await _dataRepository.DeleteMeeting(meetingId);
             _cache.Remove(meetingId);
 
             return NoContent();
@@ -123,14 +123,14 @@ namespace MeetnGreet.Controllers
 
         [Authorize]
         [HttpPost("guest")]
-        public ActionResult<GuestGetResponse> PostGuest(GuestPostRequest guestPostRequest)
+        public async Task<ActionResult<GuestGetResponse>> PostGuest(GuestPostRequest guestPostRequest)
         {
-            var meetingExists = _dataRepository.MeetingExists(guestPostRequest.MeetingId.Value);
+            var meetingExists = await _dataRepository.MeetingExists(guestPostRequest.MeetingId.Value);
             if (!meetingExists)
             {
                 return NotFound();
             }
-            var savedGuest = _dataRepository.PostGuest(new GuestPostFullRequest
+            var savedGuest = await _dataRepository.PostGuest(new GuestPostFullRequest
             {
                 MeetingId = guestPostRequest.MeetingId.Value,
                 Content = guestPostRequest.Content,
@@ -141,7 +141,7 @@ namespace MeetnGreet.Controllers
             );
             _cache.Remove(guestPostRequest.MeetingId.Value);
 
-            _meetingHubContext.Clients.Group(
+            await _meetingHubContext.Clients.Group(
                 $"Meeting-{guestPostRequest.MeetingId.Value}")
                 .SendAsync(
                     "ReceiveMeeting",
