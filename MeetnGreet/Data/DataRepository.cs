@@ -62,7 +62,7 @@ namespace MeetnGreet.Data
             {
                 await connection.OpenAsync();
                 return await connection.QueryAsync<MeetingGetManyResponse>(
-                    @"EXEC dbo.Meeting_GetMany"
+                    "EXEC dbo.Meeting_GetMany"
                 );
             }
         }
@@ -107,7 +107,7 @@ namespace MeetnGreet.Data
             {
                 await connection.OpenAsync();
                 return await connection.QueryAsync<MeetingGetManyResponse>(
-                    @"Exec dbo.Meeting_GetMany_BySearch @Search = @Search",
+                    @"EXEC dbo.Meeting_GetMany_BySearch @Search = @Search",
                     new { Search = search }
                     );
             }

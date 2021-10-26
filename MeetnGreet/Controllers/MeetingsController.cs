@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,7 +96,7 @@ namespace MeetnGreet.Controllers
                 savedMeeting);
         }
 
-        [Authorize(Policy ="MustBeMeetingAuthor")]
+        [Authorize(Policy = "MustBeMeetingAuthor")]
         [HttpPut("{meetingId}")]
         public async Task<ActionResult<MeetingGetSingleResponse>> PutMeeting(int meetingId, MeetingPutRequest meetingPutRequest)
         {

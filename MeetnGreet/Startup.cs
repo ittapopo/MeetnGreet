@@ -42,6 +42,7 @@ namespace MeetnGreet
                 System.Reflection.Assembly.GetExecutingAssembly()
                 )
                 .WithTransaction()
+                .LogToConsole()
                 .Build();
 
             if (upgrader.IsUpgradeRequired())
@@ -50,10 +51,7 @@ namespace MeetnGreet
             }
 
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "MeetnGreet", Version = "v1" });
-            });
+
             services.AddScoped<IDataRepository, DataRepository>();
 
             services.AddCors(options =>
@@ -89,12 +87,11 @@ namespace MeetnGreet
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseCors("CorsPolicy");
+
             if (env.IsDevelopment())
             {
-                app.UseCors("CorsPolicy");
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MeetnGreet v1"));
             }
             else
             {
