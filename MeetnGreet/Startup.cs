@@ -54,12 +54,9 @@ namespace MeetnGreet
 
             services.AddScoped<IDataRepository, DataRepository>();
 
-            services.AddCors(options =>
-              options.AddPolicy("CorsPolicy", builder =>
-                builder.AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .WithOrigins("http://localhost:3000")
-                  .AllowCredentials()));
+            services.AddCors(options => options.AddPolicy("CorsPolicy",
+                builder => builder.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000").AllowCredentials()));
+
             services.AddSignalR();
 
             services.AddMemoryCache();
@@ -76,11 +73,11 @@ namespace MeetnGreet
             });
 
             services.AddHttpClient();
+
             services.AddAuthorization(options =>
-                options.AddPolicy("MustBeMeetingAuthor", policy =>
-                  policy.Requirements
-                    .Add(new MustBeMeetingAuthorRequirement())));
+                options.AddPolicy("MustBeMeetingAuthor", policy => policy.Requirements.Add(new MustBeMeetingAuthorRequirement())));
             services.AddScoped<IAuthorizationHandler, MustBeMeetingAuthorHandler>();
+
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
@@ -98,7 +95,6 @@ namespace MeetnGreet
                 app.UseHttpsRedirection();
             }
             
-
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
