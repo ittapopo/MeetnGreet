@@ -55,7 +55,7 @@ namespace MeetnGreet
             services.AddScoped<IDataRepository, DataRepository>();
 
             services.AddCors(options => options.AddPolicy("CorsPolicy",
-                builder => builder.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000").AllowCredentials()));
+                builder => builder.AllowAnyMethod().AllowAnyHeader().AllowCredentials().WithOrigins(Configuration["Frontend"])));
 
             services.AddSignalR();
 
